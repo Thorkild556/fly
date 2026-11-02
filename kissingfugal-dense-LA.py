@@ -195,7 +195,9 @@ def linear_fugal_loss_terms(
     right = K.T @ (B.T @ K)
     structure_term = -torch.trace(left @ right)
 
-    feature_term = mu * torch.sum(R * (D @ K))
+    # .sum(dim=1).sum() instead of .sum(): a full reduction of a large tensor
+    # sometimes returns a wrong value on MPS (PyTorch 2.11, Apple M5 Pro).
+    feature_term = mu * torch.sum(R * (D @ K), dim=1).sum()
 
     col_sums = K @ R.sum(dim=0)
     col_constraint = torch.sum((col_sums - 1.0) ** 2)
@@ -223,7 +225,12 @@ def train_with_adam(
     if Gt.number_of_nodes() != n:
         raise ValueError("This prototype assumes Gq and Gt have the same number of nodes.")
     
-    device = torch.device("cuda" if use_GPU and torch.cuda.is_available() else "cpu")
+    if use_GPU and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif use_GPU and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     # dtype = torch.float32
     dtype = torch.float32
     

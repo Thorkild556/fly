@@ -149,6 +149,13 @@ def nx_to_torch_sparse(G: nx.Graph, n: int, device, dtype=torch.float32):
     return torch.sparse_coo_tensor(idx, val, size=(n, n)).coalesce().to(device)
 
 
+def sparse_to_device(M: torch.Tensor, device) -> torch.Tensor:
+    """Move a sparse tensor to `device`; MPS has no sparse support, so densify there."""
+    if torch.device(device).type == "mps":
+        return M.to_dense().to(device)
+    return M.to(device)
+
+
 def sparse_transpose_coo(M: torch.Tensor) -> torch.Tensor:
     """Transpose of a coalesced sparse COO tensor."""
     return torch.sparse_coo_tensor(
@@ -163,7 +170,7 @@ def sparse_transpose_coo(M: torch.Tensor) -> torch.Tensor:
 # touches (i_chunk, k_chunk) pairs that actually carry edges.
 # ---------------------------------------------------------------------------
 
-def build_sparse_blocks(A_sp: torch.Tensor, chunk: int):
+def build_sparse_blocks(A_sp: torch.Tensor, chunk: int, device=None):
     """Decompose A into chunk x chunk sparse sub-blocks.
 
     Returns a dict mapping i_chunk_idx -> list of (k_chunk_idx, sub_block).
@@ -193,7 +200,7 @@ def build_sparse_blocks(A_sp: torch.Tensor, chunk: int):
         [len(pair_sorted)],
     ])
 
-    device = A_sp.device
+    device = torch.device(device) if device is not None else A_sp.device
     dtype = values.dtype
     for a, b in zip(boundaries[:-1], boundaries[1:]):
         u_pair = pair_sorted[a]
@@ -208,9 +215,9 @@ def build_sparse_blocks(A_sp: torch.Tensor, chunk: int):
 
         i_size = min(chunk, n_rows - i_c * chunk)
         k_size = min(chunk, n_cols - k_c * chunk)
-        block = torch.sparse_coo_tensor(
+        block = sparse_to_device(torch.sparse_coo_tensor(
             sub_idx, sub_val, size=(i_size, k_size), dtype=dtype,
-        ).coalesce().to(device)
+        ).coalesce(), device)
 
         blocks_by_row.setdefault(i_c, []).append((k_c, block))
 
@@ -245,14 +252,16 @@ def _chunk_forward(
 
     # --- feature term: mu * <P_i, D_i>
     D_i = torch.cdist(F1_chunk, F2, p=2)                # B x n  (never stored beyond chunk)
-    feat_chunk = mu * (P_i * D_i).sum()
+    # .sum(dim=1).sum() instead of .sum(): a full reduction of a large tensor
+    # sometimes returns a wrong value on MPS (PyTorch 2.11, Apple M5 Pro).
+    feat_chunk = mu * (P_i * D_i).sum(dim=1).sum()
 
     # --- column / row sums for the constraint terms (running accumulators)
     col_chunk = P_i.sum(dim=0)                          # n
     row_chunk = P_i.sum(dim=1)                          # B
 
     # --- PB_i = P_i @ B  via sparse RMM:  (B^T @ P_i^T)^T
-    PB_i = torch.sparse.mm(BT_sp, P_i.T).T              # B x n
+    PB_i = (BT_sp @ P_i.T).T                            # B x n
 
     # --- AP_i = A[i_chunk, :] @ P  -- inner loop over non-empty k blocks
     AP_i = torch.zeros_like(P_i)
@@ -261,9 +270,9 @@ def _chunk_forward(
         k_end   = min(k_start + chunk, n)
         scores_k = beta * (Vn[k_start:k_end] @ Wn.T)    # B' x n
         P_k = torch.softmax(scores_k, dim=1)            # B' x n
-        AP_i = AP_i + torch.sparse.mm(A_block, P_k)     # B x n
+        AP_i = AP_i + A_block @ P_k                     # B x n
 
-    struct_chunk = -(AP_i * PB_i).sum()
+    struct_chunk = -(AP_i * PB_i).sum(dim=1).sum()
     return struct_chunk + feat_chunk, col_chunk, row_chunk
 
 
@@ -388,11 +397,13 @@ def greedy_assign_chunked(V: torch.Tensor, W: torch.Tensor, beta: float,
 def _build_inputs(Gq, Gt, device, dtype=torch.float32):
     n_q = Gq.number_of_nodes()
     n_t = Gt.number_of_nodes()
-    A_sp = nx_to_torch_sparse(Gq, n_q, device, dtype)
-    B_sp = nx_to_torch_sparse(Gt, n_t, device, dtype)
+    # A is only sliced into blocks on the CPU; B is moved once BT is built.
+    A_sp = nx_to_torch_sparse(Gq, n_q, "cpu", dtype)
+    B_sp = nx_to_torch_sparse(Gt, n_t, "cpu", dtype)
     # B is undirected here, so B == B^T.  Build the transpose anyway so the
     # function supports directed inputs without code changes.
-    BT_sp = sparse_transpose_coo(B_sp)
+    BT_sp = sparse_to_device(sparse_transpose_coo(B_sp), device)
+    B_sp = sparse_to_device(B_sp, device)
 
     F1 = feature_extraction(Gq)
     F2 = feature_extraction(Gt)
@@ -420,10 +431,15 @@ def train_with_adam(
     if Gt.number_of_nodes() != n:
         raise ValueError("This prototype assumes Gq and Gt have the same node count.")
 
-    device = torch.device("cuda" if use_GPU and torch.cuda.is_available() else "cpu")
+    if use_GPU and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif use_GPU and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
 
     A_sp, B_sp, BT_sp, F1, F2 = _build_inputs(Gq, Gt, device, dtype)
-    A_blocks_by_row, n_chunks_rows = build_sparse_blocks(A_sp, chunk)
+    A_blocks_by_row, n_chunks_rows = build_sparse_blocks(A_sp, chunk, device=device)
 
     V = torch.nn.Parameter(torch.rand((n, embed_dim), device=device, dtype=dtype))
     W = torch.nn.Parameter(torch.rand((n, embed_dim), device=device, dtype=dtype))
@@ -488,10 +504,15 @@ def train_with_LBFGS(
     n = Gq.number_of_nodes()
     if Gt.number_of_nodes() != n:
         raise ValueError("This prototype assumes Gq and Gt have the same node count.")
-    device = torch.device("cuda" if use_GPU and torch.cuda.is_available() else "cpu")
+    if use_GPU and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif use_GPU and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
 
     A_sp, B_sp, BT_sp, F1, F2 = _build_inputs(Gq, Gt, device, dtype)
-    A_blocks_by_row, n_chunks_rows = build_sparse_blocks(A_sp, chunk)
+    A_blocks_by_row, n_chunks_rows = build_sparse_blocks(A_sp, chunk, device=device)
 
     V = torch.nn.Parameter(torch.rand((n, embed_dim), device=device, dtype=dtype))
     W = torch.nn.Parameter(torch.rand((n, embed_dim), device=device, dtype=dtype))

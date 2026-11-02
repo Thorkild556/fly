@@ -1,0 +1,296 @@
+{
+  "ca-netscience": {
+    "size": "small",
+    "dir": "small/ca-netscience",
+    "n": 379,
+    "m": 914,
+    "source": "real/ca-netscience/ca-netscience.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "highschool": {
+    "size": "small",
+    "dir": "small/highschool",
+    "n": 327,
+    "m": 5818,
+    "source": "real_noise/contacts-prox-high-school-2013/contacts-prox-high-school-2013_100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "voles": {
+    "size": "small",
+    "dir": "small/voles",
+    "n": 713,
+    "m": 2322,
+    "source": "real_noise/mamalia-voles-plj-trapping/mammalia-voles-plj-trapping_100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "bio-celegans": {
+    "size": "small",
+    "dir": "small/bio-celegans",
+    "n": 453,
+    "m": 2025,
+    "source": "real/bio-celegans/bio-celegans.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "inf-euroroad": {
+    "size": "small",
+    "dir": "small/inf-euroroad",
+    "n": 1174,
+    "m": 1417,
+    "source": "real/inf-euroroad/inf-euroroad.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "arenas": {
+    "size": "small",
+    "dir": "small/arenas",
+    "n": 1133,
+    "m": 5399,
+    "source": "real/arenas/in-arenas.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "MultiMagna": {
+    "size": "small",
+    "dir": "small/MultiMagna",
+    "n": 1004,
+    "m": 8323,
+    "source": "real_noise/MultiMagna/yeast0_Y2H1.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "ACM": {
+    "size": "small",
+    "dir": "small/ACM",
+    "n": 9872,
+    "m": 39561,
+    "source": "real_noise/ACM-DBLP/ACM.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "DBLP": {
+    "size": "small",
+    "dir": "small/DBLP",
+    "n": 9916,
+    "m": 44808,
+    "source": "real_noise/ACM-DBLP/DBLP.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "2cubes": {
+    "size": "large",
+    "dir": "large/2cubes",
+    "n": 101493,
+    "m": 772894,
+    "source": "real_noise/2cubes_sphere/2cubes-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "condmat": {
+    "size": "medium",
+    "dir": "medium/condmat",
+    "n": 21363,
+    "m": 91286,
+    "source": "real_noise/condmat/condmat-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "deezer": {
+    "size": "medium",
+    "dir": "medium/deezer",
+    "n": 28281,
+    "m": 92752,
+    "source": "real_noise/deezer_europe/deezer-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "email-enron": {
+    "size": "large",
+    "dir": "large/email-enron",
+    "n": 67521,
+    "m": 253493,
+    "source": "real_noise/email-enron/email-enron-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "soc-brightkite": {
+    "size": "large",
+    "dir": "large/soc-brightkite",
+    "n": 56739,
+    "m": 212945,
+    "source": "real_noise/soc-brightkite/soc-brightkite-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "slashdot": {
+    "size": "large",
+    "dir": "large/slashdot",
+    "n": 82168,
+    "m": 504230,
+    "source": "real_noise/slashdot/slashdot-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "buzznet": {
+    "size": "large",
+    "dir": "large/buzznet",
+    "n": 77694,
+    "m": 500000,
+    "source": "real_noise/buzznet/buzznet-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "ippds": {
+    "size": "large",
+    "dir": "large/ippds",
+    "n": 108176,
+    "m": 232647,
+    "source": "real_noise/ippds/ippds-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "dblp110k": {
+    "size": "large",
+    "dir": "large/dblp110k",
+    "n": 110000,
+    "m": 492708,
+    "source": "real_noise/livemocha/dblp110k/dblp-n110000-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "soc_sign": {
+    "size": "large",
+    "dir": "large/soc_sign",
+    "n": 131580,
+    "m": 711210,
+    "source": "real_noise/soc_sign/soc_sign-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "LiveMocha": {
+    "size": "large",
+    "dir": "large/LiveMocha",
+    "n": 103991,
+    "m": 1922111,
+    "source": "real_noise/livemocha/soc-LiveMocha-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  },
+  "amazon": {
+    "size": "large",
+    "dir": "large/amazon",
+    "n": 262111,
+    "m": 899792,
+    "source": "real_noise/amazon/amazon-100.txt",
+    "noise": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ]
+  }
+}

@@ -199,6 +199,8 @@ def nx_to_torch_sparse_coo(G: nx.Graph, n: int, device, dtype=torch.float32):
 def nx_to_torch_sparse_csr(G: nx.Graph, n: int, device, dtype=torch.float32):
     """Build a torch.sparse CSR tensor.  Faster sparse @ dense than COO."""
     A_csr = nx.to_scipy_sparse_array(G, nodelist=range(n), format="csr")
+    if torch.device(device).type == "mps":
+        return torch.tensor(A_csr.toarray(), dtype=dtype, device=device)
     crow = torch.tensor(A_csr.indptr.astype(np.int64))
     col = torch.tensor(A_csr.indices.astype(np.int64))
     val = torch.tensor(A_csr.data, dtype=dtype)
@@ -220,6 +222,7 @@ def build_combined_sparse_blocks(
     A_sp: torch.Tensor,
     chunk: int,
     max_inner_batch: int = None,
+    device=None,
 ):
     """Build combined per-outer-chunk CSR sub-blocks.
 
@@ -235,7 +238,7 @@ def build_combined_sparse_blocks(
     n_rows, n_cols = A_sp.size()
     indices = A_sp.indices().cpu().numpy()
     values = A_sp.values().cpu().numpy()
-    device = A_sp.device
+    device = torch.device(device) if device is not None else A_sp.device
 
     row_chunk_idx = indices[0] // chunk
     n_chunks_rows = (n_rows + chunk - 1) // chunk
@@ -284,12 +287,15 @@ def build_combined_sparse_blocks(
                 (v_b, (i_l_b, k_local)),
                 shape=(B_i, len(k_batch)),
             )
-            crow = torch.tensor(sub_scipy.indptr.astype(np.int64))
-            col = torch.tensor(sub_scipy.indices.astype(np.int64))
-            v_t = torch.tensor(sub_scipy.data, dtype=torch.float32)
-            sub_csr = torch.sparse_csr_tensor(
-                crow, col, v_t, size=(B_i, len(k_batch)),
-            ).to(device)
+            if device.type == "mps":
+                sub_csr = torch.tensor(sub_scipy.toarray(), dtype=torch.float32, device=device)
+            else:
+                crow = torch.tensor(sub_scipy.indptr.astype(np.int64))
+                col = torch.tensor(sub_scipy.indices.astype(np.int64))
+                v_t = torch.tensor(sub_scipy.data, dtype=torch.float32)
+                sub_csr = torch.sparse_csr_tensor(
+                    crow, col, v_t, size=(B_i, len(k_batch)),
+                ).to(device)
             k_t = torch.tensor(k_batch.astype(np.int64), device=device)
             batches.append((k_t, sub_csr))
 
@@ -340,14 +346,16 @@ def _chunk_forward_fast(
 
     # --- feature term:  mu * <P_i, D_i>
     D_i = torch.cdist(F1_chunk, F2, p=2)
-    feat_chunk = mu * (P_i * D_i).sum()
+    # .sum(dim=1).sum() instead of .sum(): a full reduction of a large tensor
+    # sometimes returns a wrong value on MPS (PyTorch 2.11, Apple M5 Pro).
+    feat_chunk = mu * (P_i * D_i).sum(dim=1).sum()
 
     # --- col / row sums for the constraint terms
     col_chunk = P_i.sum(dim=0)
     row_chunk = P_i.sum(dim=1)
 
     # --- PB_i = P_i @ B  via CSR sparse-mm
-    PB_i = torch.sparse.mm(B_sp_csr, P_i.T).T
+    PB_i = (B_sp_csr @ P_i.T).T
 
     # --- AP_i via combined inner softmaxes
     AP_i = torch.zeros_like(P_i)
@@ -355,9 +363,9 @@ def _chunk_forward_fast(
         with torch.amp.autocast(**amp_kwargs):
             scores_k = beta * (Vn[k_indices] @ Wn.T)
         P_k = torch.softmax(scores_k.float(), dim=1)
-        AP_i = AP_i + torch.sparse.mm(sub_csr, P_k)
+        AP_i = AP_i + sub_csr @ P_k
 
-    struct_chunk = -(AP_i * PB_i).sum()
+    struct_chunk = -(AP_i * PB_i).sum(dim=1).sum()
     return struct_chunk + feat_chunk, col_chunk, row_chunk
 
 
@@ -449,7 +457,7 @@ def _build_inputs(Gq, Gt, device, dtype=torch.float32):
     n_t = Gt.number_of_nodes()
     # A in COO for block builder (we slice it); B in CSR for the
     # PB_c = P_c @ B sparse-mm in the hot loop.
-    A_sp = nx_to_torch_sparse_coo(Gq, n_q, device, dtype)
+    A_sp = nx_to_torch_sparse_coo(Gq, n_q, "cpu", dtype)
     B_sp_csr = nx_to_torch_sparse_csr(Gt, n_t, device, dtype)
     F1 = feature_extraction(Gq)
     F2 = feature_extraction(Gt)
@@ -486,7 +494,12 @@ def train_with_adam(
         avg_deg = 2.0 * Gq.number_of_edges() / max(n, 1)
         chunk = auto_chunk_size(n, embed_dim, avg_deg, available_memory_gb)
 
-    device = torch.device("cuda" if use_GPU and torch.cuda.is_available() else "cpu")
+    if use_GPU and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif use_GPU and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     dtype = torch.float32
 
     print(
@@ -497,7 +510,7 @@ def train_with_adam(
 
     A_sp, B_sp_csr, F1, F2 = _build_inputs(Gq, Gt, device, dtype)
     A_blocks_by_row, n_chunks_rows = build_combined_sparse_blocks(
-        A_sp, chunk, max_inner_batch=max_inner_batch,
+        A_sp, chunk, max_inner_batch=max_inner_batch, device=device,
     )
 
     V = torch.nn.Parameter(torch.rand((n, embed_dim), device=device, dtype=dtype))
@@ -573,12 +586,17 @@ def train_with_LBFGS(
         avg_deg = 2.0 * Gq.number_of_edges() / max(n, 1)
         chunk = auto_chunk_size(n, embed_dim, avg_deg, available_memory_gb)
 
-    device = torch.device("cuda" if use_GPU and torch.cuda.is_available() else "cpu")
+    if use_GPU and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif use_GPU and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     dtype = torch.float32
 
     A_sp, B_sp_csr, F1, F2 = _build_inputs(Gq, Gt, device, dtype)
     A_blocks_by_row, n_chunks_rows = build_combined_sparse_blocks(
-        A_sp, chunk, max_inner_batch=max_inner_batch,
+        A_sp, chunk, max_inner_batch=max_inner_batch, device=device,
     )
 
     V = torch.nn.Parameter(torch.rand((n, embed_dim), device=device, dtype=dtype))
