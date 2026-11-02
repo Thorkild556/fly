@@ -1,0 +1,14 @@
+[I/O] /Users/thorkildkappel/Desktop/9. Sem/project/fly/data/real_noise/ACM-DBLP/ACM.txt / /Users/thorkildkappel/Desktop/9. Sem/project/fly/data/real_noise/ACM-DBLP/ACM95.txt: n=9872, |Eq|=39561, |Et|=38695
+[run-tests] kissing-fast on ACM/95  n=9872  |Eq|=39561 |Et|=38695  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 1000, 'chunk': None, 'max_iter': 500}
+[fast-adam] avg_degree=8.0  use_checkpoint=True
+[fast-adam] n=9872 mu=0.5 m=1000  chunk=1024  max_inner_batch=None  init_mode=random  train_col_bias=True  use_amp=False  device=mps
+gpu_mem=n/a
+step=    0  loss=73504.6953  struct+feat=69788.2188  constraint=3716.4741
+step=  100  loss=32948.9766  struct+feat=32883.5508  constraint=65.4255
+step=  200  loss=13575.2510  struct+feat=13541.8379  constraint=33.4128
+step=  300  loss=6440.7847  struct+feat=6403.6094  constraint=37.1751
+step=  400  loss=643.4722  struct+feat=581.3392  constraint=62.1330
+step=  499  loss=-8182.9731  struct+feat=-8299.6816  constraint=116.7087
+[fast-adam] 500 iters in 1020.2s
+[fast-adam] peak memory usage: gpu_mem=n/a
+@@RESULT@@ {"algorithm": "kissing-fast", "dataset": "ACM", "target": "95", "n": 9872, "device": "mps", "time_s": 1022.2, "peak_rss_mb": 1498.6, "peak_gpu_mb": 2447.5, "accuracy": 0.3395, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 1000, \"chunk\": null, \"max_iter\": 500}", "eval": "hungarian", "seed": 0, "restarts": 1}

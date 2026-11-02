@@ -1,0 +1,6 @@
+[run-tests] dense-chunked on voles/90  n=713  |Eq|=2322 |Et|=2103  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 100, 'chunk': 64, 'max_iter': 1000}
+step=    0  loss=5204.7461  struct+feat=2730.1704  constraint=2474.5757
+step=  500  loss=-3034.7104  struct+feat=-3043.7812  constraint=9.0707
+step=  999  loss=-3273.5930  struct+feat=-3275.5020  constraint=1.9090
+[adam] 1000 iters in 26.8s (chunk=64, n=713, m=100, beta=10)
+@@RESULT@@ {"algorithm": "dense-chunked", "dataset": "voles", "target": "90", "n": 713, "device": "mps", "time_s": 27.22, "peak_rss_mb": 485.6, "peak_gpu_mb": 66.8, "accuracy": 0.8934, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 100, \"chunk\": 64, \"max_iter\": 1000}"}

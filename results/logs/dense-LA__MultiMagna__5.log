@@ -1,0 +1,66 @@
+[run-tests] dense-LA on MultiMagna/5  n=1004  |Eq|=8323 |Et|=8739  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.001, 'embed_dim': 500, 'max_iter': 30000, 'kind': 'relu_squared', 'favor_features': 200}
+dimensions A=(1004, 1004) B=(1004, 1004) D=(1004, 1004) V=(1004, 500) W=(1004, 500) R=(1004, 500) K=(1004, 500) left=(500, 500) right=(500, 500)
+P_min=8.147128e-04 P_max=1.173119e-03 row_max_mean=1.113007e-03 uniform=9.960159e-04
+step=0 loss=14791.401367 structure=-288.643860 feature=15079.806641 penalty=0.238323 accuracy=0.0010
+P_min=4.077095e-08 P_max=1.590977e-02 row_max_mean=5.469123e-03 uniform=9.960159e-04
+step=1000 loss=2009.257568 structure=-3678.114502 feature=5596.545898 penalty=90.826134 accuracy=0.0747
+P_min=2.113019e-08 P_max=5.198000e-02 row_max_mean=1.518244e-02 uniform=9.960159e-04
+step=2000 loss=-2106.767090 structure=-5531.054199 feature=3349.573975 penalty=74.713234 accuracy=0.1803
+P_min=1.808341e-08 P_max=2.074187e-01 row_max_mean=2.981539e-02 uniform=9.960159e-04
+step=3000 loss=-4559.543457 structure=-7086.000000 feature=2459.362793 penalty=67.093552 accuracy=0.2480
+P_min=1.585330e-08 P_max=2.762530e-01 row_max_mean=4.959776e-02 uniform=9.960159e-04
+step=4000 loss=-5747.727051 structure=-7851.183594 feature=2037.283936 penalty=66.172302 accuracy=0.3058
+P_min=1.549907e-08 P_max=5.337332e-01 row_max_mean=7.723749e-02 uniform=9.960159e-04
+step=5000 loss=-6988.821777 structure=-8813.794922 feature=1768.264038 penalty=56.709045 accuracy=0.3546
+P_min=1.515342e-08 P_max=8.478653e-01 row_max_mean=1.088988e-01 uniform=9.960159e-04
+step=6000 loss=-7853.177246 structure=-9481.326172 feature=1579.238647 penalty=48.910156 accuracy=0.4004
+P_min=1.258832e-08 P_max=9.385891e-01 row_max_mean=1.473268e-01 uniform=9.960159e-04
+step=7000 loss=-8867.496094 structure=-10366.166016 feature=1456.679932 penalty=41.990383 accuracy=0.5000
+P_min=1.320990e-08 P_max=9.890227e-01 row_max_mean=1.908067e-01 uniform=9.960159e-04
+step=8000 loss=-9906.898438 structure=-11315.216797 feature=1373.789917 penalty=34.528233 accuracy=0.5229
+P_min=1.187547e-08 P_max=9.988508e-01 row_max_mean=2.348326e-01 uniform=9.960159e-04
+step=9000 loss=-10631.878906 structure=-11977.378906 feature=1313.921021 penalty=31.579485 accuracy=0.5269
+P_min=1.255958e-08 P_max=9.998359e-01 row_max_mean=2.717639e-01 uniform=9.960159e-04
+step=10000 loss=-11185.894531 structure=-12477.652344 feature=1264.306030 penalty=27.452433 accuracy=0.5239
+P_min=1.286524e-08 P_max=9.998538e-01 row_max_mean=3.000574e-01 uniform=9.960159e-04
+step=11000 loss=-11576.918945 structure=-12826.961914 feature=1226.286133 penalty=23.756351 accuracy=0.5259
+P_min=1.303798e-08 P_max=9.998551e-01 row_max_mean=3.217810e-01 uniform=9.960159e-04
+step=12000 loss=-11856.915039 structure=-13077.035156 feature=1199.265503 penalty=20.854115 accuracy=0.5120
+P_min=1.316101e-08 P_max=9.998547e-01 row_max_mean=3.377728e-01 uniform=9.960159e-04
+step=13000 loss=-12064.041992 structure=-13264.345703 feature=1181.114502 penalty=19.189749 accuracy=0.4791
+P_min=1.143150e-08 P_max=9.998541e-01 row_max_mean=3.499719e-01 uniform=9.960159e-04
+step=14000 loss=-12212.686523 structure=-13402.613281 feature=1170.847412 penalty=19.079554 accuracy=0.4811
+P_min=1.139740e-08 P_max=9.998527e-01 row_max_mean=3.586078e-01 uniform=9.960159e-04
+step=15000 loss=-12311.673828 structure=-13496.996094 feature=1164.332397 penalty=20.990313 accuracy=0.4681
+P_min=1.150197e-08 P_max=9.998512e-01 row_max_mean=3.651931e-01 uniform=9.960159e-04
+step=16000 loss=-12377.545898 structure=-13557.428711 feature=1158.091064 penalty=21.791761 accuracy=0.4592
+P_min=1.063731e-08 P_max=9.998493e-01 row_max_mean=3.703553e-01 uniform=9.960159e-04
+step=17000 loss=-12427.290039 structure=-13603.181641 feature=1154.688354 penalty=21.202791 accuracy=0.4641
+P_min=1.103364e-08 P_max=9.998478e-01 row_max_mean=3.741958e-01 uniform=9.960159e-04
+step=18000 loss=-12461.476562 structure=-13634.295898 feature=1151.928223 penalty=20.890888 accuracy=0.4293
+P_min=1.064034e-08 P_max=9.998456e-01 row_max_mean=3.774498e-01 uniform=9.960159e-04
+step=19000 loss=-12498.653320 structure=-13670.359375 feature=1148.384644 penalty=23.320824 accuracy=0.4193
+P_min=1.130748e-08 P_max=9.998441e-01 row_max_mean=3.813670e-01 uniform=9.960159e-04
+step=20000 loss=-12564.712891 structure=-13723.478516 feature=1138.273071 penalty=20.492565 accuracy=0.4183
+P_min=1.139813e-08 P_max=9.998429e-01 row_max_mean=3.851386e-01 uniform=9.960159e-04
+step=21000 loss=-12619.913086 structure=-13772.898438 feature=1133.014648 penalty=19.970507 accuracy=0.4044
+P_min=1.152330e-08 P_max=9.998423e-01 row_max_mean=3.886797e-01 uniform=9.960159e-04
+step=22000 loss=-12658.676758 structure=-13807.398438 feature=1129.044434 penalty=19.677099 accuracy=0.4243
+P_min=1.164757e-08 P_max=9.998417e-01 row_max_mean=3.917199e-01 uniform=9.960159e-04
+step=23000 loss=-12688.567383 structure=-13832.911133 feature=1124.777588 penalty=19.566339 accuracy=0.4143
+P_min=1.196643e-08 P_max=9.998397e-01 row_max_mean=3.949141e-01 uniform=9.960159e-04
+step=24000 loss=-12719.762695 structure=-13855.591797 feature=1121.685425 penalty=14.143136 accuracy=0.4382
+P_min=1.258251e-08 P_max=9.998389e-01 row_max_mean=3.978054e-01 uniform=9.960159e-04
+step=25000 loss=-12739.152344 structure=-13873.138672 feature=1121.145020 penalty=12.841499 accuracy=0.4114
+P_min=1.302243e-08 P_max=9.998382e-01 row_max_mean=3.996007e-01 uniform=9.960159e-04
+step=26000 loss=-12750.408203 structure=-13883.825195 feature=1120.737549 penalty=12.680040 accuracy=0.4203
+P_min=1.332528e-08 P_max=9.998382e-01 row_max_mean=4.009867e-01 uniform=9.960159e-04
+step=27000 loss=-12759.581055 structure=-13891.871094 feature=1119.642578 penalty=12.647514 accuracy=0.4293
+P_min=1.358601e-08 P_max=9.998379e-01 row_max_mean=4.022301e-01 uniform=9.960159e-04
+step=28000 loss=-12767.979492 structure=-13900.197266 feature=1119.592529 penalty=12.625441 accuracy=0.4293
+P_min=1.355262e-08 P_max=9.998368e-01 row_max_mean=4.036931e-01 uniform=9.960159e-04
+step=29000 loss=-12778.008789 structure=-13910.265625 feature=1119.841064 penalty=12.415692 accuracy=0.4233
+P_min=1.360316e-08 P_max=9.998361e-01 row_max_mean=4.056637e-01 uniform=9.960159e-04
+step=29999 loss=-12792.734375 structure=-13925.816406 feature=1120.371338 penalty=12.710486 accuracy=0.4382
+Time taken for training with Adam: 106.13 seconds
+@@RESULT@@ {"algorithm": "dense-LA", "dataset": "MultiMagna", "target": "5", "n": 1004, "device": "mps", "time_s": 107.11, "peak_rss_mb": 547.8, "peak_gpu_mb": 90.8, "accuracy": 0.4382, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.001, \"embed_dim\": 500, \"max_iter\": 30000, \"kind\": \"relu_squared\", \"favor_features\": 200}"}

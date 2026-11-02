@@ -1,0 +1,13 @@
+[run-tests] dense-chunked-fast on voles/80  n=713  |Eq|=2322 |Et|=1879  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': None, 'chunk': None, 'max_iter': 4000}
+[fast-adam] n=713  m=100  chunk=64  max_inner_batch=128  use_amp=False  device=mps
+step=    0  loss=5269.5830  struct+feat=2692.1221  constraint=2577.4609
+step=  500  loss=-1447.4028  struct+feat=-1456.1121  constraint=8.7093
+step= 1000  loss=-2093.4446  struct+feat=-2096.2810  constraint=2.8364
+step= 1500  loss=-2289.3096  struct+feat=-2294.3857  constraint=5.0762
+step= 2000  loss=-2433.4294  struct+feat=-2437.4949  constraint=4.0655
+step= 2500  loss=-2472.5073  struct+feat=-2475.9426  constraint=3.4352
+step= 3000  loss=-2501.2434  struct+feat=-2505.4695  constraint=4.2260
+step= 3500  loss=-2512.7649  struct+feat=-2516.7664  constraint=4.0014
+step= 3999  loss=-2523.6311  struct+feat=-2527.5952  constraint=3.9642
+[fast-adam] 4000 iters in 62.5s
+@@RESULT@@ {"algorithm": "dense-chunked-fast", "dataset": "voles", "target": "80", "n": 713, "device": "mps", "time_s": 62.89, "peak_rss_mb": 737.7, "peak_gpu_mb": 58.8, "accuracy": 0.8289, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": null, \"chunk\": null, \"max_iter\": 4000}"}

@@ -99,6 +99,7 @@ import torch
 import torch.utils.checkpoint as torch_cp
 
 from helpers.pred import feature_extraction, convertToPermHungarian
+from helpers.graph_io import read_graph_pair
 
 
 # Silence the benign PyTorch sparse-invariant-check UserWarning that fires
@@ -116,8 +117,8 @@ warnings.filterwarnings(
 def read_file(
     query_path: str = "fly/data/real_noise/deezer_europe/deezer-100.txt",
     target_path: str = "fly/data/real_noise/deezer_europe/deezer-95.txt",
-    n: int = 28281
 ):
+    """Query and target graph; n is counted from the files (helpers/graph_io.py)."""
     repo_root = Path(__file__).resolve().parents[1]
     query_path = Path(query_path)
     target_path = Path(target_path)
@@ -126,18 +127,7 @@ def read_file(
     if not target_path.is_absolute():
         target_path = repo_root / target_path
 
-    Gq, Gt = nx.Graph(), nx.Graph()
-    for i in range(n):
-        Gq.add_node(i)
-        Gt.add_node(i)
-    with open(query_path) as f:
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gq.add_edge(u, v)
-    with open(target_path) as f:
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gt.add_edge(u, v)
+    Gq, Gt, n, _ = read_graph_pair(query_path, target_path)
     return Gq, Gt, n
 
 
@@ -154,6 +144,19 @@ def sparse_to_device(M: torch.Tensor, device) -> torch.Tensor:
     if torch.device(device).type == "mps":
         return M.to_dense().to(device)
     return M.to(device)
+
+
+# MPS (Apple GPU) has no sparse tensors, and a full .sum() of a large tensor
+# sometimes returns a wrong value there (PyTorch 2.11, Apple M5 Pro).  These
+# two helpers do the original operation on CUDA / CPU and the workaround on MPS.
+def _spmm(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """torch.sparse.mm(a, b); on MPS `a` is a dense matrix."""
+    return a @ b if a.layout == torch.strided else torch.sparse.mm(a, b)
+
+
+def _sum_all(x: torch.Tensor) -> torch.Tensor:
+    """x.sum(); on MPS summed per row first."""
+    return x.sum(dim=1).sum() if x.device.type == "mps" else x.sum()
 
 
 def sparse_transpose_coo(M: torch.Tensor) -> torch.Tensor:
@@ -252,16 +255,14 @@ def _chunk_forward(
 
     # --- feature term: mu * <P_i, D_i>
     D_i = torch.cdist(F1_chunk, F2, p=2)                # B x n  (never stored beyond chunk)
-    # .sum(dim=1).sum() instead of .sum(): a full reduction of a large tensor
-    # sometimes returns a wrong value on MPS (PyTorch 2.11, Apple M5 Pro).
-    feat_chunk = mu * (P_i * D_i).sum(dim=1).sum()
+    feat_chunk = mu * _sum_all(P_i * D_i)
 
     # --- column / row sums for the constraint terms (running accumulators)
     col_chunk = P_i.sum(dim=0)                          # n
     row_chunk = P_i.sum(dim=1)                          # B
 
     # --- PB_i = P_i @ B  via sparse RMM:  (B^T @ P_i^T)^T
-    PB_i = (BT_sp @ P_i.T).T                            # B x n
+    PB_i = _spmm(BT_sp, P_i.T).T              # B x n
 
     # --- AP_i = A[i_chunk, :] @ P  -- inner loop over non-empty k blocks
     AP_i = torch.zeros_like(P_i)
@@ -270,9 +271,9 @@ def _chunk_forward(
         k_end   = min(k_start + chunk, n)
         scores_k = beta * (Vn[k_start:k_end] @ Wn.T)    # B' x n
         P_k = torch.softmax(scores_k, dim=1)            # B' x n
-        AP_i = AP_i + A_block @ P_k                     # B x n
+        AP_i = AP_i + _spmm(A_block, P_k)     # B x n
 
-    struct_chunk = -(AP_i * PB_i).sum(dim=1).sum()
+    struct_chunk = -_sum_all(AP_i * PB_i)
     return struct_chunk + feat_chunk, col_chunk, row_chunk
 
 
@@ -397,13 +398,14 @@ def greedy_assign_chunked(V: torch.Tensor, W: torch.Tensor, beta: float,
 def _build_inputs(Gq, Gt, device, dtype=torch.float32):
     n_q = Gq.number_of_nodes()
     n_t = Gt.number_of_nodes()
-    # A is only sliced into blocks on the CPU; B is moved once BT is built.
-    A_sp = nx_to_torch_sparse(Gq, n_q, "cpu", dtype)
-    B_sp = nx_to_torch_sparse(Gt, n_t, "cpu", dtype)
+    # On MPS the sparse matrices are built on the CPU and B, B^T densified.
+    sparse_device = "cpu" if torch.device(device).type == "mps" else device
+    A_sp = nx_to_torch_sparse(Gq, n_q, sparse_device, dtype)
+    B_sp = nx_to_torch_sparse(Gt, n_t, sparse_device, dtype)
     # B is undirected here, so B == B^T.  Build the transpose anyway so the
     # function supports directed inputs without code changes.
-    BT_sp = sparse_to_device(sparse_transpose_coo(B_sp), device)
-    B_sp = sparse_to_device(B_sp, device)
+    BT_sp = sparse_transpose_coo(B_sp)
+    BT_sp, B_sp = sparse_to_device(BT_sp, device), sparse_to_device(B_sp, device)
 
     F1 = feature_extraction(Gq)
     F2 = feature_extraction(Gt)

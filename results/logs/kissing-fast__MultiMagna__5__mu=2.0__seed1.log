@@ -1,0 +1,29 @@
+[I/O] /Users/thorkildkappel/Desktop/9. Sem/project/fly/data/real_noise/MultiMagna/yeast0_Y2H1.txt / /Users/thorkildkappel/Desktop/9. Sem/project/fly/data/real_noise/MultiMagna/yeast5_Y2H1.txt: n=1004, |Eq|=8323, |Et|=8739
+[run-tests] kissing-fast on MultiMagna/5  n=1004  |Eq|=8323 |Et|=8739  {'mu': 2.0, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': None, 'chunk': None, 'max_iter': 2000}
+[fast-adam] avg_degree=16.6  use_checkpoint=True
+[fast-adam] n=1004 mu=2.0 m=100  chunk=64  max_inner_batch=None  init_mode=random  train_col_bias=True  use_amp=False  device=mps
+gpu_mem=n/a
+step=    0  loss=63664.5664  struct+feat=60150.5273  constraint=3514.0376
+step=  100  loss=12166.2891  struct+feat=12087.9492  constraint=78.3397
+step=  200  loss=795.8177  struct+feat=737.6498  constraint=58.1679
+step=  300  loss=-5265.2412  struct+feat=-5313.4492  constraint=48.2081
+step=  400  loss=-7775.0454  struct+feat=-7821.0669  constraint=46.0214
+step=  500  loss=-8678.9004  struct+feat=-8723.5967  constraint=44.6959
+step=  600  loss=-9183.9033  struct+feat=-9230.4912  constraint=46.5876
+step=  700  loss=-9576.1416  struct+feat=-9624.1162  constraint=47.9748
+step=  800  loss=-9771.3281  struct+feat=-9819.1602  constraint=47.8321
+step=  900  loss=-9885.3779  struct+feat=-9932.6279  constraint=47.2496
+step= 1000  loss=-9949.4756  struct+feat=-9995.5410  constraint=46.0658
+step= 1100  loss=-9986.7588  struct+feat=-10032.1895  constraint=45.4307
+step= 1200  loss=-10011.1982  struct+feat=-10056.3066  constraint=45.1085
+step= 1300  loss=-10029.4639  struct+feat=-10074.4072  constraint=44.9437
+step= 1400  loss=-10043.5596  struct+feat=-10088.3867  constraint=44.8268
+step= 1500  loss=-10055.0215  struct+feat=-10099.8018  constraint=44.7803
+step= 1600  loss=-10064.2725  struct+feat=-10109.0947  constraint=44.8222
+step= 1700  loss=-10071.8057  struct+feat=-10116.6621  constraint=44.8563
+step= 1800  loss=-10078.3379  struct+feat=-10123.2246  constraint=44.8864
+step= 1900  loss=-10084.4629  struct+feat=-10129.3662  constraint=44.9029
+step= 1999  loss=-10090.6748  struct+feat=-10135.5918  constraint=44.9173
+[fast-adam] 2000 iters in 82.9s
+[fast-adam] peak memory usage: gpu_mem=n/a
+@@RESULT@@ {"algorithm": "kissing-fast", "dataset": "MultiMagna", "target": "5", "n": 1004, "device": "mps", "time_s": 83.94, "peak_rss_mb": 838.2, "peak_gpu_mb": 66.7, "accuracy": 0.7181, "params": "{\"mu\": 2.0, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": null, \"chunk\": null, \"max_iter\": 2000}", "eval": "hungarian", "seed": 1, "restarts": 1}

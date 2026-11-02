@@ -1,0 +1,4 @@
+[submodule "Framework_GraphAlignment"]
+	path = Framework_GraphAlignment
+	url = https://github.com/constantinosskitsas/Framework_GraphAlignment.git
+	shallow = true

@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from helpers.pred import feature_extraction, convertToPermHungarian
+from helpers.graph_io import read_graph_pair
 import scipy
 import csv
 import itertools
@@ -59,29 +60,12 @@ class FAVORPlusMapping:
         return phi
 
 
-def read_file():
-    query_path = "/home/cheng/fly/data/real_noise/MultiMagna/yeast0_Y2H1.txt"
-    target_path = "/home/cheng/fly/data/real_noise/MultiMagna/yeast5_Y2H1.txt"
-
-    n = 1004
-    Gq = nx.Graph()
-    Gt = nx.Graph()
-
-    for i in range(n):
-        Gq.add_node(i)
-    for i in range(n):
-        Gt.add_node(i)
-
-    with open(query_path) as f:
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gq.add_edge(u, v)
-            
-    with open(target_path) as f:        
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gt.add_edge(u, v)
-
+def read_file(
+    query_path: str = "/home/cheng/fly/data/real_noise/MultiMagna/yeast0_Y2H1.txt",
+    target_path: str = "/home/cheng/fly/data/real_noise/MultiMagna/yeast5_Y2H1.txt",
+):
+    """Query and target graph; n is counted from the files (helpers/graph_io.py)."""
+    Gq, Gt, n, _ = read_graph_pair(query_path, target_path)
     return Gq, Gt, n
 
 
@@ -195,9 +179,10 @@ def linear_fugal_loss_terms(
     right = K.T @ (B.T @ K)
     structure_term = -torch.trace(left @ right)
 
-    # .sum(dim=1).sum() instead of .sum(): a full reduction of a large tensor
-    # sometimes returns a wrong value on MPS (PyTorch 2.11, Apple M5 Pro).
-    feature_term = mu * torch.sum(R * (D @ K), dim=1).sum()
+    # On MPS summed per row first: a full .sum() of a large tensor sometimes
+    # returns a wrong value there (PyTorch 2.11, Apple M5 Pro).
+    feature_term = mu * (torch.sum(R * (D @ K), dim=1).sum() if R.device.type == "mps"
+                         else torch.sum(R * (D @ K)))
 
     col_sums = K @ R.sum(dim=0)
     col_constraint = torch.sum((col_sums - 1.0) ** 2)

@@ -1,0 +1,12 @@
+[run-tests] kissing-fast on MultiMagna/10  n=1004  |Eq|=8323 |Et|=9155  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': None, 'chunk': None, 'max_iter': 2000}
+[fast-adam] avg_degree=16.6  use_checkpoint=True
+[fast-adam] n=1004 mu=0.5 m=100  chunk=64  max_inner_batch=None  init_mode=random  train_col_bias=True  use_amp=False  device=mps
+gpu_mem=n/a
+step=    0  loss=18830.3906  struct+feat=15175.9941  constraint=3654.3965
+step=  500  loss=-12298.6074  struct+feat=-12320.5615  constraint=21.9536
+step= 1000  loss=-13065.7676  struct+feat=-13092.2617  constraint=26.4943
+step= 1500  loss=-13150.1572  struct+feat=-13176.6621  constraint=26.5048
+step= 1999  loss=-13173.6309  struct+feat=-13199.9531  constraint=26.3221
+[fast-adam] 2000 iters in 80.3s
+[fast-adam] peak memory usage: gpu_mem=n/a
+@@RESULT@@ {"algorithm": "kissing-fast", "dataset": "MultiMagna", "target": "10", "n": 1004, "device": "mps", "time_s": 81.32, "peak_rss_mb": 791.9, "peak_gpu_mb": 66.8, "accuracy": 0.752, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": null, \"chunk\": null, \"max_iter\": 2000}"}

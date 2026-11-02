@@ -1,0 +1,9 @@
+[run-tests] dense-chunked-fast on MultiMagna/20  n=1004  |Eq|=8323 |Et|=9987  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': None, 'chunk': None, 'max_iter': 2000}
+[fast-adam] n=1004  m=100  chunk=64  max_inner_batch=128  use_amp=False  device=mps
+step=    0  loss=19373.4629  struct+feat=15850.8301  constraint=3522.6333
+step=  500  loss=-10558.7949  struct+feat=-10606.7041  constraint=47.9088
+step= 1000  loss=-11486.9043  struct+feat=-11532.1104  constraint=45.2057
+step= 1500  loss=-11595.0049  struct+feat=-11639.9707  constraint=44.9657
+step= 1999  loss=-11626.8809  struct+feat=-11668.8389  constraint=41.9576
+[fast-adam] 2000 iters in 77.3s
+@@RESULT@@ {"algorithm": "dense-chunked-fast", "dataset": "MultiMagna", "target": "20", "n": 1004, "device": "mps", "time_s": 78.4, "peak_rss_mb": 685.4, "peak_gpu_mb": 66.8, "accuracy": 0.6912, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": null, \"chunk\": null, \"max_iter\": 2000}"}

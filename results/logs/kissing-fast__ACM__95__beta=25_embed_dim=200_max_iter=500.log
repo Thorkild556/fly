@@ -1,0 +1,9 @@
+[run-tests] kissing-fast on ACM/95  n=9872  |Eq|=39561 |Et|=38695  {'mu': 0.1, 'beta': 25, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 200, 'chunk': None, 'max_iter': 500}
+[fast-adam] avg_degree=8.0  use_checkpoint=True
+[fast-adam] n=9872 mu=0.1 m=200  chunk=1024  max_inner_batch=None  init_mode=random  train_col_bias=True  use_amp=False  device=mps
+gpu_mem=n/a
+step=    0  loss=124702.8281  struct+feat=13889.0938  constraint=110813.7344
+step=  499  loss=-3384.4414  struct+feat=-3913.9482  constraint=529.5068
+[fast-adam] 500 iters in 740.3s
+[fast-adam] peak memory usage: gpu_mem=n/a
+@@RESULT@@ {"algorithm": "kissing-fast", "dataset": "ACM", "target": "95", "n": 9872, "device": "mps", "time_s": 742.39, "peak_rss_mb": 1498.0, "peak_gpu_mb": 2083.8, "accuracy": 0.0202, "params": "{\"mu\": 0.1, \"beta\": 25, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 200, \"chunk\": null, \"max_iter\": 500}"}

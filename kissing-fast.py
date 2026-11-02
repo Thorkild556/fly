@@ -114,6 +114,7 @@ import torch
 import torch.utils.checkpoint as torch_cp
 
 from helpers.pred import feature_extraction, convertToPermHungarian
+from helpers.graph_io import read_graph_pair
 
 
 warnings.filterwarnings(
@@ -174,43 +175,11 @@ def recommend_embed_dim(n: int, num_edges: int) -> int:
 def read_file(
     query_path: str = "data/real_noise/MultiMagna/yeast0_Y2H1.txt",
     target_path: str = "data/real_noise/MultiMagna/yeast5_Y2H1.txt",
-    n: int = 8739,
     keep_self_loops: bool = False,
 ):
-    Gq, Gt = nx.Graph(), nx.Graph()
-    for i in range(n):
-        Gq.add_node(i); Gt.add_node(i)
-    with open(query_path) as f:
-        for line in f:
-            s = line.strip()
-            if not s or s.startswith("#"):
-                continue
-            parts = s.split()
-            if len(parts) < 2:
-                continue
-            try:
-                u = int(parts[0]); v = int(parts[1])
-            except Exception:
-                continue
-            if u == v and not keep_self_loops:
-                continue
-            Gq.add_edge(u, v)
-    with open(target_path) as f:
-        for line in f:
-            s = line.strip()
-            if not s or s.startswith("#"):
-                continue
-            parts = s.split()
-            if len(parts) < 2:
-                continue
-            try:
-                u = int(parts[0]); v = int(parts[1])
-            except Exception:
-                continue
-            if u == v and not keep_self_loops:
-                continue
-            Gt.add_edge(u, v)
-    print(f"[I/O] query_file={query_path} target_file={target_path} self_loops={keep_self_loops}")        
+    """Query and target graph; n is counted from the files (helpers/graph_io.py)."""
+    Gq, Gt, n, _ = read_graph_pair(query_path, target_path, keep_self_loops=keep_self_loops)
+    print(f"[I/O] query_file={query_path} target_file={target_path} self_loops={keep_self_loops}")
     return Gq, Gt, n
 
 
@@ -222,6 +191,7 @@ def nx_to_torch_sparse_coo(G: nx.Graph, n: int, device, dtype=torch.float32):
 
 
 def nx_to_torch_sparse_csr(G: nx.Graph, n: int, device, dtype=torch.float32):
+    """Build a torch.sparse CSR tensor.  Faster sparse @ dense than COO."""
     A_csr = nx.to_scipy_sparse_array(G, nodelist=range(n), format="csr")
     if torch.device(device).type == "mps":
         return torch.tensor(A_csr.toarray(), dtype=dtype, device=device)
@@ -230,6 +200,18 @@ def nx_to_torch_sparse_csr(G: nx.Graph, n: int, device, dtype=torch.float32):
     val = torch.tensor(A_csr.data, dtype=dtype)
     return torch.sparse_csr_tensor(crow, col, val, size=(n, n)).to(device)
 
+
+# MPS (Apple GPU) has no sparse tensors, and a full .sum() of a large tensor
+# sometimes returns a wrong value there (PyTorch 2.11, Apple M5 Pro).  These
+# two helpers do the original operation on CUDA / CPU and the workaround on MPS.
+def _spmm(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """torch.sparse.mm(a, b); on MPS `a` is a dense matrix."""
+    return a @ b if a.layout == torch.strided else torch.sparse.mm(a, b)
+
+
+def _sum_all(x: torch.Tensor) -> torch.Tensor:
+    """x.sum(); on MPS summed per row first."""
+    return x.sum(dim=1).sum() if x.device.type == "mps" else x.sum()
 
 
 
@@ -265,7 +247,6 @@ def build_combined_sparse_blocks(
     indices = A_sp.indices().cpu().numpy()
     values = A_sp.values().cpu().numpy()
     device = torch.device(device) if device is not None else A_sp.device
-    ...
 
     row_chunk_idx = indices[0] // chunk
     n_chunks_rows = (n_rows + chunk - 1) // chunk
@@ -320,9 +301,6 @@ def build_combined_sparse_blocks(
             if device.type == "mps":
                 sub_csr = torch.tensor(sub_scipy.toarray(), dtype=torch.float32, device=device)
             else:
-                crow = torch.tensor(sub_scipy.indptr.astype(np.int64))
-                col = torch.tensor(sub_scipy.indices.astype(np.int64))
-                v_t = torch.tensor(sub_scipy.data, dtype=torch.float32)
                 sub_csr = torch.sparse_csr_tensor(
                     crow, col, v_t, size=(B_i, len(k_batch)),
                 ).to(device)
@@ -380,16 +358,14 @@ def _chunk_forward_fast(
  
     # feature term
     D_i = torch.cdist(F1_chunk, F2, p=2)
-    # .sum(dim=1).sum() instead of .sum(): a full reduction of a large tensor
-    # sometimes returns a wrong value on MPS (PyTorch 2.11, Apple M5 Pro).
-    feat_chunk = mu * (P_i * D_i).sum(dim=1).sum()
+    feat_chunk = mu * _sum_all(P_i * D_i)
  
     # column / row sums
     col_chunk = P_i.sum(dim=0)
     row_chunk = P_i.sum(dim=1)
  
     # PB_i = P_i @ B
-    PB_i = (B_sp_csr @ P_i.T).T
+    PB_i = _spmm(B_sp_csr, P_i.T).T
  
     # AP_i via combined inner softmaxes
     AP_i = torch.zeros_like(P_i)
@@ -399,15 +375,15 @@ def _chunk_forward_fast(
         if col_bias is not None:
             scores_k = scores_k + col_bias.to(dtype=scores_k.dtype)
         P_k = torch.softmax(scores_k.float(), dim=1)
-        AP_i = AP_i + sub_csr @ P_k
+        AP_i = AP_i + _spmm(sub_csr, P_k)
  
-    struct_chunk = -(AP_i * PB_i).sum(dim=1).sum()
+    struct_chunk = -_sum_all(AP_i * PB_i)
     chunk_loss = struct_chunk + feat_chunk
  
     # Pass 2: fold the (constant-weighted) column penalty gradient in.
     # (P_i * g).sum() has gradient exactly g w.r.t. P_i == d(col_term)/dP_i.
     if col_grad_vec is not None:
-        chunk_loss = chunk_loss + (P_i * col_grad_vec).sum(dim=1).sum()
+        chunk_loss = chunk_loss + _sum_all(P_i * col_grad_vec)
  
     return chunk_loss, col_chunk, row_chunk
 
@@ -600,7 +576,7 @@ def _build_inputs(Gq, Gt, device, dtype=torch.float32):
     n_t = Gt.number_of_nodes()
     # A in COO for block builder (we slice it); B in CSR for the
     # PB_c = P_c @ B sparse-mm in the hot loop.
-    A_sp = nx_to_torch_sparse_coo(Gq, n_q, "cpu", dtype)
+    A_sp = nx_to_torch_sparse_coo(Gq, n_q, "cpu" if torch.device(device).type == "mps" else device, dtype)
     B_sp_csr = nx_to_torch_sparse_csr(Gt, n_t, device, dtype)
     F1 = feature_extraction(Gq)
     F2 = feature_extraction(Gt)

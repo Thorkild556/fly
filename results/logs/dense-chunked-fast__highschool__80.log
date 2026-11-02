@@ -1,0 +1,8 @@
+[run-tests] dense-chunked-fast on highschool/80  n=327  |Eq|=5818 |Et|=4654  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': None, 'chunk': None, 'max_iter': 1300}
+[fast-adam] n=327  m=32  chunk=64  max_inner_batch=128  use_amp=False  device=mps
+step=    0  loss=5093.4175  struct+feat=1959.2106  constraint=3134.2070
+step=  500  loss=-6176.9175  struct+feat=-6222.0234  constraint=45.1058
+step= 1000  loss=-6749.8389  struct+feat=-6775.6616  constraint=25.8227
+step= 1299  loss=-6866.7529  struct+feat=-6890.2207  constraint=23.4675
+[fast-adam] 1300 iters in 12.1s
+@@RESULT@@ {"algorithm": "dense-chunked-fast", "dataset": "highschool", "target": "80", "n": 327, "device": "mps", "time_s": 12.72, "peak_rss_mb": 493.2, "peak_gpu_mb": 26.8, "accuracy": 0.9847, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": null, \"chunk\": null, \"max_iter\": 1300}"}

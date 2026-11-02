@@ -1,0 +1,10 @@
+[run-tests] fugal on voles/99  n=713  |Eq|=2322 |Et|=2300  {'mu': 0.5, 'niter': 15}
+/Users/thorkildkappel/Desktop/9. Sem/project/fly/.venv/lib/python3.12/site-packages/sklearn/utils/extmath.py:203: RuntimeWarning: divide by zero encountered in matmul
+  ret = a @ b
+/Users/thorkildkappel/Desktop/9. Sem/project/fly/.venv/lib/python3.12/site-packages/sklearn/utils/extmath.py:203: RuntimeWarning: overflow encountered in matmul
+  ret = a @ b
+/Users/thorkildkappel/Desktop/9. Sem/project/fly/.venv/lib/python3.12/site-packages/sklearn/utils/extmath.py:203: RuntimeWarning: invalid value encountered in matmul
+  ret = a @ b
+/Users/thorkildkappel/Desktop/9. Sem/project/fly/helpers/sinkhorn.py:175: UserWarning: An output with one or more elements was resized since it had shape [713], which does not match the required output shape [1, 713]. This behavior is deprecated, and in a future PyTorch release outputs will not be resized unless they have zero elements. You can explicitly reuse an out tensor t by resizing it, inplace, to zero elements with t.resize_(0). (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/native/Resize.cpp:38.)
+  torch.matmul(u, K, out=KTu)
+@@RESULT@@ {"algorithm": "fugal", "dataset": "voles", "target": "99", "n": 713, "device": "cpu", "time_s": 1.64, "peak_rss_mb": 329.1, "peak_gpu_mb": "", "accuracy": 0.9846, "params": "{\"mu\": 0.5, \"niter\": 15}"}

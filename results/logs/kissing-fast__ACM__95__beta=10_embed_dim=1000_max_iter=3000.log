@@ -1,0 +1,1 @@
+[run-tests] kissing-fast on ACM/95  n=9872  |Eq|=39561 |Et|=38695  {'mu': 0.1, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 1000, 'chunk': None, 'max_iter': 3000}

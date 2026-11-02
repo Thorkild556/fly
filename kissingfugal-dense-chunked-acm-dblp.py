@@ -99,6 +99,7 @@ import torch
 import torch.utils.checkpoint as torch_cp
 
 from helpers.pred import feature_extraction, convertToPermHungarian
+from helpers.graph_io import read_graph_pair
 
 
 path = "/home/cheng/Fugal/data/real_noise/ACM-DBLP/pos_pairs.npy"
@@ -121,22 +122,9 @@ warnings.filterwarnings(
 def read_file(
     query_path: str = "/home/cheng/fly/data/real_noise/ACM-DBLP/ACM.txt",
     target_path: str = "/home/cheng/fly/data/real_noise/ACM-DBLP/DBLP.txt",
-    n: int = 9916,
 ):
-
-    n = 9916
-    Gq, Gt = nx.Graph(), nx.Graph()
-    for i in range(n):
-        Gq.add_node(i)
-        Gt.add_node(i)
-    with open(query_path) as f:
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gq.add_edge(u, v)
-    with open(target_path) as f:
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gt.add_edge(u, v)
+    """Query and target graph; n is counted from the files (helpers/graph_io.py)."""
+    Gq, Gt, n, _ = read_graph_pair(query_path, target_path)
     return Gq, Gt, n
 
 

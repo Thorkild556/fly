@@ -1,0 +1,6 @@
+[run-tests] dense-chunked-fast on ACM/95  n=9872  |Eq|=39561 |Et|=38695  {'mu': 0.1, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 1000, 'chunk': None, 'max_iter': 500}
+[fast-adam] n=9872  m=1000  chunk=1024  max_inner_batch=2048  use_amp=False  device=mps
+step=    0  loss=17610.1211  struct+feat=13912.0195  constraint=3698.1018
+step=  499  loss=-10855.8604  struct+feat=-10948.8037  constraint=92.9432
+[fast-adam] 500 iters in 928.8s
+@@RESULT@@ {"algorithm": "dense-chunked-fast", "dataset": "ACM", "target": "95", "n": 9872, "device": "mps", "time_s": 930.83, "peak_rss_mb": 1497.8, "peak_gpu_mb": 2447.5, "accuracy": 0.318, "params": "{\"mu\": 0.1, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 1000, \"chunk\": null, \"max_iter\": 500}"}

@@ -2,31 +2,15 @@ import networkx as nx
 import torch
 import numpy as np
 from helpers.pred import feature_extraction
+from helpers.graph_io import read_graph_pair
 import scipy
 
-def read_file():
-    query_path = "/home/cheng/fly/data/real_noise/MultiMagna/yeast0_Y2H1.txt"
-    target_path = "/home/cheng/fly/data/real_noise/MultiMagna/yeast5_Y2H1.txt"
-
-    n = 1004
-    Gq = nx.Graph()
-    Gt = nx.Graph()
-
-    for i in range(n):
-        Gq.add_node(i)
-    for i in range(n):
-        Gt.add_node(i)
-
-    with open(query_path) as f:
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gq.add_edge(u, v)
-            
-    with open(target_path) as f:        
-        for line in f:
-            u, v = map(int, line.strip().split())
-            Gt.add_edge(u, v)
-
+def read_file(
+    query_path: str = "/home/cheng/fly/data/real_noise/MultiMagna/yeast0_Y2H1.txt",
+    target_path: str = "/home/cheng/fly/data/real_noise/MultiMagna/yeast5_Y2H1.txt",
+):
+    """Query and target graph; n is counted from the files (helpers/graph_io.py)."""
+    Gq, Gt, n, _ = read_graph_pair(query_path, target_path)
     return Gq, Gt, n
 
 

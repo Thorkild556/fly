@@ -1,0 +1,10 @@
+[run-tests] kissing-fast on voles/95  n=713  |Eq|=2322 |Et|=2212  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': None, 'chunk': None, 'max_iter': 1000}
+[fast-adam] avg_degree=6.5  use_checkpoint=True
+[fast-adam] n=713 mu=0.5 m=100  chunk=64  max_inner_batch=None  init_mode=random  train_col_bias=True  use_amp=False  device=mps
+gpu_mem=n/a
+step=    0  loss=5447.2930  struct+feat=2764.7153  constraint=2682.5776
+step=  500  loss=-3600.3662  struct+feat=-3606.7583  constraint=6.3920
+step=  999  loss=-3734.2395  struct+feat=-3739.8113  constraint=5.5718
+[fast-adam] 1000 iters in 21.1s
+[fast-adam] peak memory usage: gpu_mem=n/a
+@@RESULT@@ {"algorithm": "kissing-fast", "dataset": "voles", "target": "95", "n": 713, "device": "mps", "time_s": 21.51, "peak_rss_mb": 567.7, "peak_gpu_mb": 58.8, "accuracy": 0.9453, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": null, \"chunk\": null, \"max_iter\": 1000}"}

@@ -68,3 +68,37 @@ some other techiniques, to save the time(3000 is sufficient for even large datas
 
 **Gradient descent algorithm**: For now, I use Adam, but please try others such as SGD.
 
+
+# Benchmark: Fugal vs. the kissing variants (time, memory, accuracy)
+
+```
+git clone --recurse-submodules <this repo> && cd fly
+bash setup-remote.sh            # Linux + NVIDIA: venv, requirements, GPU check, smoke test
+# Mac (MPS) or CPU: python3 -m venv .venv && .venv/bin/pip install -r requirements2.txt
+```
+
+`run-tests.py` runs Fugal (`fugal_original.py`, a copy of the original Fugal code) and the
+kissing variants, each run in its own process, and appends time, peak memory and accuracy
+to `results/results.csv` (logs in `results/logs/`). The scripts pick CUDA, then MPS, then CPU.
+
+```
+.venv/bin/python run-tests.py                                   # MultiMagna, high-school, voles
+.venv/bin/python run-tests.py --datasets fw-small --gpus 0 1    # generated datasets, one run per GPU
+.venv/bin/python run-tests.py --algos kissing-fast --datasets fw-condmat --targets 5 10
+.venv/bin/python sweep-hyperparameters.py                       # hyperparameter sweep, resumable
+```
+
+Above 30,000 nodes Fugal and dense-LA are skipped (dense n x n matrices; `--no-size-limit`),
+and the kissing variants are scored by top-1 accuracy instead of the Hungarian assignment
+(column `eval`).
+
+## Datasets
+
+`data/framework_noise/{small,medium,large}/<name>/` (n <= 10k, 10k-30k, > 30k nodes):
+`<name>-0.txt` is the base graph, `<name>-5.txt` ... `<name>-25.txt` have 5-25 % noise from
+the default noise of [Framework_GraphAlignment](https://github.com/constantinosskitsas/Framework_GraphAlignment)
+(git submodule): each edge is removed with that probability unless it is the last edge of a
+node. Node ids are not shuffled, so the ground truth is the identity. Run them as
+`fw-<name>`, or `fw-small` / `fw-medium` / `fw-large`. They are rebuilt (identically) with
+`generate-framework-datasets.py`; `make-noisy-graphs.py` makes a dataset from a raw graph
+(`.mtx` or edge list), with `--method framework`, `--refill` and `--permute` options.

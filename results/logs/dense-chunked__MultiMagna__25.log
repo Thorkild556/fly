@@ -1,0 +1,11 @@
+[run-tests] dense-chunked on MultiMagna/25  n=1004  |Eq|=8323 |Et|=10403  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 100, 'chunk': 64, 'max_iter': 3500}
+step=    0  loss=19911.3477  struct+feat=16363.9434  constraint=3547.4038
+step=  500  loss=-9559.7197  struct+feat=-9639.4297  constraint=79.7098
+step= 1000  loss=-10466.7314  struct+feat=-10524.9668  constraint=58.2358
+step= 1500  loss=-10612.1709  struct+feat=-10669.2812  constraint=57.1105
+step= 2000  loss=-10665.2852  struct+feat=-10722.6982  constraint=57.4129
+step= 2500  loss=-10685.0840  struct+feat=-10741.9492  constraint=56.8654
+step= 3000  loss=-10732.6152  struct+feat=-10783.2686  constraint=50.6529
+step= 3499  loss=-10744.9678  struct+feat=-10794.9023  constraint=49.9343
+[adam] 3500 iters in 227.1s (chunk=64, n=1004, m=100, beta=10)
+@@RESULT@@ {"algorithm": "dense-chunked", "dataset": "MultiMagna", "target": "25", "n": 1004, "device": "mps", "time_s": 228.25, "peak_rss_mb": 742.3, "peak_gpu_mb": 74.8, "accuracy": 0.5637, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 100, \"chunk\": 64, \"max_iter\": 3500}"}

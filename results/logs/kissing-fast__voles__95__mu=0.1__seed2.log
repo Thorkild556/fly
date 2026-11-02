@@ -1,0 +1,19 @@
+[I/O] /Users/thorkildkappel/Desktop/9. Sem/project/fly/data/real_noise/mamalia-voles-plj-trapping/mammalia-voles-plj-trapping_100.txt / /Users/thorkildkappel/Desktop/9. Sem/project/fly/data/real_noise/mamalia-voles-plj-trapping/mammalia-voles-plj-trapping_95.txt: n=713, |Eq|=2322, |Et|=2212
+[run-tests] kissing-fast on voles/95  n=713  |Eq|=2322 |Et|=2212  {'mu': 0.1, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': None, 'chunk': None, 'max_iter': 1000}
+[fast-adam] avg_degree=6.5  use_checkpoint=True
+[fast-adam] n=713 mu=0.1 m=100  chunk=64  max_inner_batch=None  init_mode=random  train_col_bias=True  use_amp=False  device=mps
+gpu_mem=n/a
+step=    0  loss=2829.1648  struct+feat=518.6245  constraint=2310.5403
+step=  100  loss=514.2938  struct+feat=514.2269  constraint=0.0669
+step=  200  loss=415.3729  struct+feat=415.2635  constraint=0.1093
+step=  300  loss=154.3099  struct+feat=153.0040  constraint=1.3059
+step=  400  loss=-374.2932  struct+feat=-377.8752  constraint=3.5821
+step=  500  loss=-1470.3196  struct+feat=-1478.3890  constraint=8.0694
+step=  600  loss=-2726.3809  struct+feat=-2734.9282  constraint=8.5474
+step=  700  loss=-3606.1262  struct+feat=-3615.1509  constraint=9.0246
+step=  800  loss=-3842.7537  struct+feat=-3850.0410  constraint=7.2874
+step=  900  loss=-3964.5186  struct+feat=-3971.0078  constraint=6.4892
+step=  999  loss=-3975.2676  struct+feat=-3981.8032  constraint=6.5357
+[fast-adam] 1000 iters in 21.6s
+[fast-adam] peak memory usage: gpu_mem=n/a
+@@RESULT@@ {"algorithm": "kissing-fast", "dataset": "voles", "target": "95", "n": 713, "device": "mps", "time_s": 22.02, "peak_rss_mb": 586.5, "peak_gpu_mb": 58.7, "accuracy": 0.9285, "params": "{\"mu\": 0.1, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": null, \"chunk\": null, \"max_iter\": 1000}", "eval": "hungarian", "seed": 2, "restarts": 1}

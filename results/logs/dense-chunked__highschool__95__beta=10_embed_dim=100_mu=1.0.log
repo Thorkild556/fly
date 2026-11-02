@@ -1,0 +1,6 @@
+[run-tests] dense-chunked on highschool/95  n=327  |Eq|=5818 |Et|=5527  {'mu': 1.0, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 100, 'chunk': 64, 'max_iter': 1000}
+step=    0  loss=5181.2627  struct+feat=4051.4963  constraint=1129.7664
+step=  500  loss=-9687.0322  struct+feat=-9687.1592  constraint=0.1268
+step=  999  loss=-9721.6592  struct+feat=-9721.7500  constraint=0.0908
+[adam] 1000 iters in 12.9s (chunk=64, n=327, m=100, beta=10)
+@@RESULT@@ {"algorithm": "dense-chunked", "dataset": "highschool", "target": "95", "n": 327, "device": "mps", "time_s": 13.52, "peak_rss_mb": 462.5, "peak_gpu_mb": 27.2, "accuracy": 1.0, "params": "{\"mu\": 1.0, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 100, \"chunk\": 64, \"max_iter\": 1000}"}

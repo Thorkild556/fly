@@ -1,0 +1,8 @@
+[run-tests] dense-chunked on MultiMagna/15  n=1004  |Eq|=8323 |Et|=9571  {'mu': 0.5, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 100, 'chunk': 64, 'max_iter': 2000}
+step=    0  loss=18913.5566  struct+feat=15565.5107  constraint=3348.0454
+step=  500  loss=-11339.8691  struct+feat=-11396.5332  constraint=56.6644
+step= 1000  loss=-12228.9707  struct+feat=-12261.9697  constraint=32.9987
+step= 1500  loss=-12321.1709  struct+feat=-12354.7441  constraint=33.5734
+step= 1999  loss=-12353.3564  struct+feat=-12387.1201  constraint=33.7640
+[adam] 2000 iters in 130.1s (chunk=64, n=1004, m=100, beta=10)
+@@RESULT@@ {"algorithm": "dense-chunked", "dataset": "MultiMagna", "target": "15", "n": 1004, "device": "mps", "time_s": 131.16, "peak_rss_mb": 615.1, "peak_gpu_mb": 74.8, "accuracy": 0.7181, "params": "{\"mu\": 0.5, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 100, \"chunk\": 64, \"max_iter\": 2000}"}

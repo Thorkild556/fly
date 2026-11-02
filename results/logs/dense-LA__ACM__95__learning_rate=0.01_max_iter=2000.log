@@ -1,0 +1,10 @@
+[run-tests] dense-LA on ACM/95  n=9872  |Eq|=39561 |Et|=38695  {'mu': 0.1, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 500, 'max_iter': 2000, 'kind': 'relu_squared', 'favor_features': 200}
+dimensions A=(9872, 9872) B=(9872, 9872) D=(9872, 9872) V=(9872, 500) W=(9872, 500) R=(9872, 500) K=(9872, 500) left=(500, 500) right=(500, 500)
+P_min=7.958007e-05 P_max=1.242655e-04 row_max_mean=1.154297e-04 uniform=1.012966e-04
+step=0 loss=13908.061523 structure=-62.829205 feature=13970.634766 penalty=0.256195 accuracy=0.0000
+P_min=1.764803e-09 P_max=9.915519e-01 row_max_mean=1.952048e-02 uniform=1.012966e-04
+step=1000 loss=-5414.875977 structure=-6872.528809 feature=1442.332397 penalty=15.320362 accuracy=0.0954
+P_min=1.355936e-09 P_max=9.982531e-01 row_max_mean=3.450394e-02 uniform=1.012966e-04
+step=1999 loss=-8692.888672 structure=-10083.488281 feature=1370.458862 penalty=20.140335 accuracy=0.0520
+Time taken for training with Adam: 225.54 seconds
+@@RESULT@@ {"algorithm": "dense-LA", "dataset": "ACM", "target": "95", "n": 9872, "device": "mps", "time_s": 227.58, "peak_rss_mb": 3052.5, "peak_gpu_mb": 3470.5, "accuracy": 0.052, "params": "{\"mu\": 0.1, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 500, \"max_iter\": 2000, \"kind\": \"relu_squared\", \"favor_features\": 200}"}

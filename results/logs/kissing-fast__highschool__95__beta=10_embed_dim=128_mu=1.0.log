@@ -1,0 +1,10 @@
+[run-tests] kissing-fast on highschool/95  n=327  |Eq|=5818 |Et|=5527  {'mu': 1.0, 'beta': 10, 'row_penalty': 10, 'col_penalty': 200, 'learning_rate': 0.01, 'embed_dim': 128, 'chunk': None, 'max_iter': 700}
+[fast-adam] avg_degree=35.6  use_checkpoint=True
+[fast-adam] n=327 mu=1.0 m=128  chunk=64  max_inner_batch=None  init_mode=random  train_col_bias=True  use_amp=False  device=mps
+gpu_mem=n/a
+step=    0  loss=4979.5698  struct+feat=4044.1099  constraint=935.4600
+step=  500  loss=-9717.4434  struct+feat=-9718.9590  constraint=1.5153
+step=  699  loss=-9742.1689  struct+feat=-9743.5361  constraint=1.3670
+[fast-adam] 700 iters in 9.2s
+[fast-adam] peak memory usage: gpu_mem=n/a
+@@RESULT@@ {"algorithm": "kissing-fast", "dataset": "highschool", "target": "95", "n": 327, "device": "mps", "time_s": 9.91, "peak_rss_mb": 492.0, "peak_gpu_mb": 26.8, "accuracy": 1.0, "params": "{\"mu\": 1.0, \"beta\": 10, \"row_penalty\": 10, \"col_penalty\": 200, \"learning_rate\": 0.01, \"embed_dim\": 128, \"chunk\": null, \"max_iter\": 700}"}
