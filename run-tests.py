@@ -24,7 +24,9 @@ then share the CPU cores, so for clean timings use one GPU at a time.
 
 Every run happens in its own subprocess so the peak memory of one run does
 not leak into the next.  Rows are appended to results/results.csv as they
-finish; the full output of each run is kept in results/logs/.
+finish; the full output of each run is kept in results/logs/.  Runs that
+already have a row with the same settings are skipped, so after a crash or
+Ctrl+C the same command continues where it stopped (--rerun runs them again).
 
 Reported numbers
   time_s       wall time of the algorithm call (feature extraction + training;
@@ -559,6 +561,25 @@ def open_csv(path, fields):
     return f, writer
 
 
+def run_key(algo, dataset, target, seed, max_iter, settings, restarts):
+    """What identifies a run in results.csv: the combination and every
+    setting it ran with, so a run with changed settings is not skipped."""
+    params = hyperparameters(algo, dataset, target, max_iter, None, settings)
+    return (algo, dataset, target, "" if seed is None else str(seed), str(restarts), settings,
+            json.dumps(params, sort_keys=True))
+
+
+def finished_runs(csv_path):
+    """run_key of every row already in csv_path."""
+    if not csv_path.exists():
+        return set()
+    with open(csv_path, newline="") as f:
+        return {(r["algorithm"], r["dataset"], r["target"], r.get("seed") or "",
+                 r.get("restarts") or "1", r.get("settings") or "tuned",
+                 json.dumps(json.loads(r["params"]), sort_keys=True))
+                for r in csv.DictReader(f)}
+
+
 def too_large(algo, dataset, target):
     return num_nodes(dataset, target) > MAX_N.get(algo, float("inf"))
 
@@ -694,6 +715,9 @@ def main():
                              "protocol_hyperparameters; tuned: the per-dataset Result-all "
                              "settings")
     parser.add_argument("--out", type=Path, default=ROOT / "results")
+    parser.add_argument("--rerun", action="store_true",
+                        help="also run the combinations that already have a row in "
+                             "<out>/results.csv (by default they are skipped)")
     parser.add_argument("--worker", nargs=3, metavar=("ALGO", "DATASET", "TARGET"),
                         help=argparse.SUPPRESS)
     parser.add_argument("--overrides", type=json.loads, help=argparse.SUPPRESS)
@@ -723,6 +747,16 @@ def main():
                     continue
                 for seed in ([None] if algo == "fugal" else seeds):
                     jobs.append((algo, dataset, target, seed))
+
+    # Resume: skip every run that already has a row with the same settings.
+    if not args.rerun:
+        done = finished_runs(csv_path)
+        todo = [job for job in jobs if run_key(*job, args.max_iter, settings,
+                                               1 if job[0] == "fugal" else args.restarts) not in done]
+        if len(todo) < len(jobs):
+            print(f"Skipping {len(jobs) - len(todo)} of {len(jobs)} runs already in {csv_path} "
+                  f"(see --rerun)")
+        jobs = todo
 
     def label(job):
         algo, dataset, target, seed = job
