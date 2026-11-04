@@ -277,8 +277,8 @@ def convergence(history, window=CONVERGENCE_WINDOW, tol=CONVERGENCE_TOL):
     import numpy as np
     best = np.minimum.accumulate(np.asarray(history, dtype=float))
     scale = max(abs(best[-1]), 1.0)
-    converged_at = next(k for k in range(0, len(best), window)
-                        if best[k] - best[-1] <= tol * scale) if len(best) else 0
+    converged_at = next((k for k in range(0, len(best), window)
+                         if best[k] - best[-1] <= tol * scale), len(best))
     final_gain = (best[-window - 1] - best[-1]) / scale if len(best) > window else float("nan")
     return converged_at, final_gain
 
