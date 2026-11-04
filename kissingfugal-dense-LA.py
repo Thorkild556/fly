@@ -205,6 +205,7 @@ def train_with_adam(
     use_GPU: bool = True,
     kind: str = "elu",
     favor_features: int | None = None,
+    eval_every: int | None = 1000,
 ):
     n = Gq.number_of_nodes()
     if Gt.number_of_nodes() != n:
@@ -301,7 +302,9 @@ def train_with_adam(
         else:
             wait += 1
 
-        if step % 1000 == 0 or step == max_iter - 1:
+        # eval_every=None skips this accuracy print-out (a Hungarian assignment
+        # on the dense P) so it is not part of the measured training time.
+        if eval_every and (step % eval_every == 0 or step == max_iter - 1):
             
             P = make_soft_matching(
                 V,

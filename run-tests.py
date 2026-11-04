@@ -9,8 +9,12 @@ and reports time, peak memory and Hungarian accuracy for every
     .venv/bin/python run-tests.py --algos fugal kissing-fast --datasets voles --targets 95
     .venv/bin/python run-tests.py --max-iter 50         # quick smoke test
     .venv/bin/python run-tests.py --datasets fw-small --gpus 0 1   # generated datasets, 2 GPUs
+    .venv/bin/python run-tests.py --settings tuned      # per-dataset Result-all settings
 
-For hyperparameter sweeps see sweep-hyperparameters.py.
+By default every run uses the benchmark protocol: the same settings rules
+for every dataset, depending only on its size class (see
+protocol_hyperparameters), one run per method with seed 0.  For
+hyperparameter sweeps see sweep-hyperparameters.py.
 
 Datasets: the ones listed below, plus fw-<name> for every dataset made by
 generate-framework-datasets.py (targets 5..25 = % noise); fw-small,
@@ -211,7 +215,81 @@ MAX_N = {"fugal": 30_000, "dense-LA": 30_000}
 HUNGARIAN_MAX_N = 30_000
 
 
-def hyperparameters(algo, dataset, target, max_iter=None, overrides=None):
+# ============================================================================
+# The benchmark protocol (--settings protocol, the default of run-tests.py):
+# one run per method, dataset and noise level, with settings that depend
+# only on the size class of the graph, never on the dataset itself.
+#   mu        0.5 small, 0.1 medium / large (Result-all's convention), the
+#             same for Fugal and the kissing variants
+#   kissing   beta=10 (25 above 30k nodes, as in all large Result-all runs),
+#             row_penalty=10, col_penalty=200, learning_rate=1e-2 (README)
+#             for every variant; embed_dim from recommend_embed_dim (the
+#             authors' rule), except dense-LA, whose kernel approximation
+#             needs its default 500; chunk automatic (dense-chunked: its
+#             default 1024; chunk changes memory and speed, not the result)
+#   steps     exactly PROTOCOL_STEPS[size] for every kissing variant, no
+#             early stopping.  Whether a run had converged is measured
+#             afterwards from its loss history (converged_at, final_gain)
+#   seed      0 for the kissing variants (Fugal is deterministic)
+# The "tuned" settings (the tables above, per dataset from Result-all) are
+# still used by sweep-hyperparameters.py and with --settings tuned.
+# ============================================================================
+
+PROTOCOL_MU = {"small": 0.5, "medium": 0.1, "large": 0.1}
+PROTOCOL_STEPS = {"small": 10_000, "medium": 10_000, "large": 2_000}
+PROTOCOL_SEED = 0
+CONVERGENCE_WINDOW = 500   # steps
+CONVERGENCE_TOL = 1e-4     # relative to the final best loss
+
+
+def recommend_embed_dim(n):
+    """recommend_embed_dim of kissing-fast.py / dense-chunked-fast.py (it
+    only uses n), which picks embed_dim for those two when it is None."""
+    return 32 if n <= 500 else 100 if n <= 5000 else 200 if n <= 50000 else 300
+
+
+def protocol_hyperparameters(algo, dataset, target):
+    n = num_nodes(dataset, target)
+    size = size_class(n)
+    params = dict(mu=PROTOCOL_MU[size])
+    if algo == "fugal":
+        return {**params, **ALGORITHMS["fugal"]["default"]}
+    params.update(COMMON)
+    if size == "large":
+        params["beta"] = 25
+    if algo == "dense-LA":
+        params.update(embed_dim=500, kind="relu_squared", favor_features=200, eval_every=None)
+    elif algo == "dense-chunked":
+        params.update(embed_dim=recommend_embed_dim(n), chunk=1024)
+    else:
+        params.update(embed_dim=None, chunk=None)   # picked by recommend_embed_dim / auto_chunk_size
+    params["max_iter"] = PROTOCOL_STEPS[size]
+    return params
+
+
+def convergence(history, window=CONVERGENCE_WINDOW, tol=CONVERGENCE_TOL):
+    """(converged_at, final_gain) of a loss history.  converged_at is the
+    first multiple of `window` steps from which the best loss stays within
+    tol (relative) of the final best loss; final_gain is the relative
+    improvement of the best loss over the last `window` steps.  A run whose
+    converged_at is close to its number of steps, or whose final_gain is
+    above tol, was still learning when it stopped."""
+    import numpy as np
+    best = np.minimum.accumulate(np.asarray(history, dtype=float))
+    scale = max(abs(best[-1]), 1.0)
+    converged_at = next(k for k in range(0, len(best), window)
+                        if best[k] - best[-1] <= tol * scale) if len(best) else 0
+    final_gain = (best[-window - 1] - best[-1]) / scale if len(best) > window else float("nan")
+    return converged_at, final_gain
+
+
+def hyperparameters(algo, dataset, target, max_iter=None, overrides=None, settings="tuned"):
+    if settings == "protocol":
+        params = protocol_hyperparameters(algo, dataset, target)
+        if max_iter is not None and "max_iter" in params:
+            params["max_iter"] = max_iter
+        params.update(overrides or {})
+        return params
     spec = ALGORITHMS[algo]
     ds = DATASETS[dataset]
     hp = ds.get("hp", dataset)
@@ -318,11 +396,13 @@ HISTORY_INDEX = {"dense-LA": 3, "dense-chunked": 2, "dense-chunked-fast": 2, "ki
 
 
 def run_algorithm(algo, Gq, Gt, params, use_gpu=True, restarts=1):
-    """Returns (row_ind, col_ind, device, time_s, peak_rss_mb, eval).
+    """Returns (row_ind, col_ind, device, time_s, peak_rss_mb, eval, training).
 
     Time and memory are taken when the algorithm returns; for the kissing
     variants the assignment below is evaluation and not measured.  eval is
-    "hungarian" (one-to-one assignment) or "top1" (row argmax, large n).
+    "hungarian" (one-to-one assignment) or "top1" (row argmax, large n);
+    training has the number of steps of the kept run (Fugal: niter) and
+    its convergence (see convergence()).
     With restarts > 1 a kissing variant is trained that many times from new
     random starts and the run with the lowest loss is kept; the time
     includes all of them.
@@ -336,7 +416,8 @@ def run_algorithm(algo, Gq, Gt, params, use_gpu=True, restarts=1):
         elapsed = time.perf_counter() - start
         rss = peak_rss_mb()
         row_ind, col_ind = zip(*pairs)
-        return row_ind, col_ind, "cpu", elapsed, rss, "hungarian"
+        training = dict(steps=params["niter"], converged_at="", final_gain="")
+        return row_ind, col_ind, "cpu", elapsed, rss, "hungarian", training
 
     module = load_script(ALGORITHMS[algo]["script"])
     # Only affects what is printed, so it is not part of params (and of the
@@ -357,6 +438,10 @@ def run_algorithm(algo, Gq, Gt, params, use_gpu=True, restarts=1):
         torch.cuda.synchronize()
     elapsed = time.perf_counter() - start
     rss = peak_rss_mb()
+    history = out[HISTORY_INDEX[algo]]
+    converged_at, final_gain = convergence(history)
+    training = dict(steps=len(history), converged_at=converged_at,
+                    final_gain=f"{final_gain:.2e}")
 
     beta = params["beta"]
     if algo == "dense-LA":
@@ -368,13 +453,13 @@ def run_algorithm(algo, Gq, Gt, params, use_gpu=True, restarts=1):
             (V, W, _), col_bias, chunk = out, None, params["chunk"] or 1024
         if V.shape[0] > HUNGARIAN_MAX_N:
             row_ind, col_ind = top1_assignment(V, W, beta, col_bias, chunk)
-            return row_ind, col_ind, V.device.type, elapsed, rss, "top1"
+            return row_ind, col_ind, V.device.type, elapsed, rss, "top1", training
         P = (module.reconstruct_P(V, W, beta=beta, chunk=chunk, col_bias=col_bias)
              if col_bias is not None else module.reconstruct_P(V, W, beta=beta, chunk=chunk))
 
     import scipy.optimize
     row_ind, col_ind = scipy.optimize.linear_sum_assignment(P.cpu().numpy(), maximize=True)
-    return row_ind, col_ind, P.device.type, elapsed, rss, "hungarian"
+    return row_ind, col_ind, P.device.type, elapsed, rss, "hungarian", training
 
 
 def accuracy(row_ind, col_ind, dataset, target, n, ids):
@@ -394,7 +479,8 @@ def accuracy(row_ind, col_ind, dataset, target, n, ids):
     return correct / len(pairs)
 
 
-def worker(algo, dataset, target, max_iter, overrides, cpu=False, seed=None, restarts=1):
+def worker(algo, dataset, target, max_iter, overrides, cpu=False, seed=None, restarts=1,
+           settings="tuned"):
     sys.path.insert(0, str(FLY_DIR))  # for `from helpers...` inside the scripts
     import random
     import numpy as np
@@ -405,7 +491,7 @@ def worker(algo, dataset, target, max_iter, overrides, cpu=False, seed=None, res
         np.random.seed(seed)
         torch.manual_seed(seed)
 
-    params = hyperparameters(algo, dataset, target, max_iter, overrides)
+    params = hyperparameters(algo, dataset, target, max_iter, overrides, settings)
     Gq, Gt, n, ids = load_graphs(dataset, target)
     print(f"[run-tests] {algo} on {dataset}/{target}  n={n}  "
           f"|Eq|={Gq.number_of_edges()} |Et|={Gt.number_of_edges()}  {params}", flush=True)
@@ -413,13 +499,12 @@ def worker(algo, dataset, target, max_iter, overrides, cpu=False, seed=None, res
     use_mps = not cpu and not torch.cuda.is_available() and torch.backends.mps.is_available()
     if use_mps:
         with MpsMemorySampler() as sampler:
-            row_ind, col_ind, device, elapsed, rss, method = run_algorithm(algo, Gq, Gt, params,
-                                                                           restarts=restarts)
+            row_ind, col_ind, device, elapsed, rss, method, training = run_algorithm(
+                algo, Gq, Gt, params, restarts=restarts)
         peak_gpu = sampler.peak
     else:
-        row_ind, col_ind, device, elapsed, rss, method = run_algorithm(algo, Gq, Gt, params,
-                                                                       use_gpu=not cpu,
-                                                                       restarts=restarts)
+        row_ind, col_ind, device, elapsed, rss, method, training = run_algorithm(
+            algo, Gq, Gt, params, use_gpu=not cpu, restarts=restarts)
         peak_gpu = torch.cuda.max_memory_reserved() if device == "cuda" else 0
 
     result = {
@@ -436,6 +521,8 @@ def worker(algo, dataset, target, max_iter, overrides, cpu=False, seed=None, res
         "eval": method,
         "seed": "" if seed is None else seed,
         "restarts": restarts,
+        **training,
+        "settings": settings,
     }
     print(RESULT_PREFIX + json.dumps(result), flush=True)
 
@@ -445,7 +532,8 @@ def worker(algo, dataset, target, max_iter, overrides, cpu=False, seed=None, res
 # ============================================================================
 
 FIELDS = ["algorithm", "dataset", "target", "n", "device", "time_s",
-          "peak_rss_mb", "peak_gpu_mb", "accuracy", "params", "eval", "seed", "restarts"]
+          "peak_rss_mb", "peak_gpu_mb", "accuracy", "params", "eval", "seed", "restarts",
+          "steps", "converged_at", "final_gain", "settings"]
 
 
 def open_csv(path, fields):
@@ -476,7 +564,7 @@ def too_large(algo, dataset, target):
 
 
 def run_one(algo, dataset, target, max_iter, log_dir, overrides=None, gpu=None, cpu=False,
-            seed=None, restarts=1):
+            seed=None, restarts=1, settings="tuned"):
     cmd = [sys.executable, str(Path(__file__).resolve()), "--worker", algo, dataset, target]
     if max_iter is not None:
         cmd += ["--max-iter", str(max_iter)]
@@ -493,6 +581,9 @@ def run_one(algo, dataset, target, max_iter, log_dir, overrides=None, gpu=None, 
     if restarts > 1:
         cmd += ["--restarts", str(restarts)]
         name += f"__restarts{restarts}"
+    if settings != "tuned":
+        cmd += ["--settings", settings]
+        name += f"__{settings}"
     env, prefix = None, "    "
     if gpu is not None:
         env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu)}
@@ -549,7 +640,8 @@ def expand_datasets(names):
 
 
 def print_summary(results, header=("algorithm", "dataset", "target", "device", "time_s",
-                                    "peak_rss_mb", "peak_gpu_mb", "accuracy")):
+                                    "peak_rss_mb", "peak_gpu_mb", "accuracy", "steps",
+                                    "converged_at")):
     rows = [[str(r[h]) for h in header] for r in results]
     widths = [max(len(h), *(len(row[i]) for row in rows)) for i, h in enumerate(header)]
     print("\n" + "  ".join(h.ljust(w) for h, w in zip(header, widths)))
@@ -597,6 +689,10 @@ def main():
     parser.add_argument("--restarts", type=int, default=1,
                         help="train the kissing variants this many times per run and keep "
                              "the lowest loss (time includes all restarts)")
+    parser.add_argument("--settings", choices=["protocol", "tuned"],
+                        help="protocol (default): the same rules for every dataset, see "
+                             "protocol_hyperparameters; tuned: the per-dataset Result-all "
+                             "settings")
     parser.add_argument("--out", type=Path, default=ROOT / "results")
     parser.add_argument("--worker", nargs=3, metavar=("ALGO", "DATASET", "TARGET"),
                         help=argparse.SUPPRESS)
@@ -605,8 +701,11 @@ def main():
     args = parser.parse_args()
 
     if args.worker:
-        worker(*args.worker, args.max_iter, args.overrides, args.cpu, args.seed, args.restarts)
+        worker(*args.worker, args.max_iter, args.overrides, args.cpu, args.seed, args.restarts,
+               args.settings or "tuned")
         return
+    settings = args.settings or "protocol"
+    seeds = args.seeds or ([PROTOCOL_SEED] if settings == "protocol" else [None])
 
     log_dir = args.out / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -622,7 +721,7 @@ def main():
                     print(f"Skipping {algo} on {dataset}/{target}: n={num_nodes(dataset, target)} "
                           f"> {MAX_N[algo]} (see --no-size-limit)")
                     continue
-                for seed in ([None] if algo == "fugal" else args.seeds or [None]):
+                for seed in ([None] if algo == "fugal" else seeds):
                     jobs.append((algo, dataset, target, seed))
 
     def label(job):
@@ -634,7 +733,8 @@ def main():
         print(f"[{jobs.index(job) + 1}/{len(jobs)}] {label(job)}"
               + (f"  (gpu {gpu})" if gpu is not None else ""), flush=True)
         return run_one(algo, dataset, target, args.max_iter, log_dir, gpu=gpu, cpu=args.cpu,
-                       seed=seed, restarts=1 if algo == "fugal" else args.restarts)
+                       seed=seed, restarts=1 if algo == "fugal" else args.restarts,
+                       settings=settings)
 
     results, failed = [], []
     f, writer = open_csv(csv_path, FIELDS)
@@ -648,12 +748,13 @@ def main():
             results.append(result)
             print(f"  done: {label(job)}  time={result['time_s']}s  peak_rss={result['peak_rss_mb']}MB  "
                   f"peak_gpu={result['peak_gpu_mb'] or 'n/a'}MB  acc={result['accuracy']} "
-                  f"({result['eval']})")
+                  f"({result['eval']})  steps={result['steps']}  converged_at={result['converged_at']}")
 
     if results:
         if args.seeds:
             print_summary(results, header=("algorithm", "dataset", "target", "seed", "device",
-                                           "time_s", "peak_rss_mb", "peak_gpu_mb", "accuracy"))
+                                           "time_s", "peak_rss_mb", "peak_gpu_mb", "accuracy",
+                                           "steps", "converged_at"))
             print_seed_summary(results)
         else:
             print_summary(results)
