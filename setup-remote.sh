@@ -1,22 +1,32 @@
 #!/usr/bin/env bash
 # setup-remote.sh: set up this repo on a Linux server with NVIDIA GPUs.
 #
-#     git clone --recurse-submodules <this repo> fly && cd fly && bash setup-remote.sh
+#     git clone --recurse-submodules -b tests/thorkild <this repo> fly && cd fly && bash setup-remote.sh
 #
 # It creates .venv (the path all commands in the scripts use), installs
 # requirements.txt (the CUDA 12 package set from the fly repo, torch
 # 2.11), checks that PyTorch sees the GPUs and runs a short smoke test of
-# every algorithm on each GPU.  Needs Python 3.10+ and an NVIDIA driver
-# that supports CUDA 12.6 (driver 560 or newer).
+# every algorithm on each GPU.  Needs an NVIDIA driver that supports
+# CUDA 12 (nvidia-smi shows "CUDA Version: 12.x" or higher); it never
+# touches the driver or anything outside this folder.
+#
+# If conda is available (as on the AU servers, whose rules ask for conda
+# or docker), .venv is a conda environment with Python 3.12 created inside
+# this folder (conda create -p), so nothing is installed system-wide and
+# deleting the folder removes everything.  Otherwise a plain venv from
+# $PYTHON (default python3, 3.10+) is used.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-PYTHON=${PYTHON:-python3}
 if [ ! -x .venv/bin/python ]; then
-    "$PYTHON" -m venv .venv
+    if command -v conda >/dev/null 2>&1; then
+        conda create -y -p "$PWD/.venv" python=3.12 pip
+    else
+        "${PYTHON:-python3}" -m venv .venv
+    fi
 fi
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
 
 .venv/bin/python - <<'EOF'
 import torch
